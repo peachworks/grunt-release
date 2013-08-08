@@ -11,6 +11,11 @@ var semver = require('semver');
 
 module.exports = function(grunt){
   grunt.registerTask('release', 'bump version, git tag, git push, npm publish', function(type){
+
+    if(!type || (type !== 'patch' && type !== 'minor' && type !== 'major' && type !== 'prerelease')) {
+      grunt.fatal('Type of release must be specific as: patch, minor, major, prerelease')
+    }
+
     //defaults
     var options = this.options({
       bump: true,
