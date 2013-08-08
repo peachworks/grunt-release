@@ -15,12 +15,14 @@ module.exports = function(grunt){
     var options = this.options({
       bump: true,
       file: grunt.config('pkgFile') || 'package.json',
+      shrinkwrapFile : grunt.config('shrinkwrapFile') || 'npm-shrinkwrap.json',
       add: true,
       commit: true,
       tag: true,
       push: true,
       pushTags: true,
-      npm : true
+      npm : true,
+      shrinkwrap : true
     });
 
     var tagName = grunt.config.getRaw('release.options.tagName') || '<%= version %>';
@@ -35,6 +37,10 @@ module.exports = function(grunt){
     };
 
     if (options.bump) bump(config);
+    if (options.shrinkwrap) {
+      shrinkwrap();
+      add({file : options.shrinkwrapFile});
+    }
     if (options.add) add(config);
     if (options.commit) commit(config);
     if (options.tag) tag(config);
@@ -57,7 +63,13 @@ module.exports = function(grunt){
 
     function commit(config){
       var message = grunt.template.process(commitMessage, templateOptions);
-      run('git commit '+ config.file +' -m "'+ message +'"', config.file + ' committed');
+
+      var filesString = config.file;
+      if(options.shrinkwrap) {
+        filesString += ' ' + options.shrinkwrapFile;
+      }
+
+      run('git commit '+ filesString +' -m "'+ message +'"', config.file + ' committed');
     }
 
     function tag(config){
@@ -78,7 +90,7 @@ module.exports = function(grunt){
       var cmd = 'npm publish';
       var msg = 'published '+ config.newVersion +' to npm';
       var npmtag = getNpmTag();
-      if (npmtag){ 
+      if (npmtag){
         cmd += ' --tag ' + npmtag;
         msg += ' with a tag of "' + npmtag + '"';
       }
@@ -109,6 +121,9 @@ module.exports = function(grunt){
       config.pkg.version = config.newVersion;
       grunt.file.write(config.file, JSON.stringify(config.pkg, null, '  ') + '\n');
       grunt.log.ok('Version bumped to ' + config.newVersion);
+    }
+    function shrinkwrap() {
+      run('npm shrinkwrap', 'npm shrink wrapping')
     }
 
   });
