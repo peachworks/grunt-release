@@ -92,7 +92,7 @@ module.exports = function(grunt){
         deferred.resolve();
       }
       else {
-        var success = shell.exec(cmd, {silent:true}).code === 0;
+        var success = shell.exec(cmd, {silent:false}).code === 0;
 
         if (success){ 
           grunt.log.ok(msg || cmd);
