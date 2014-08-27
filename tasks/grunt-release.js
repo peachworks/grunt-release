@@ -9,6 +9,7 @@
 var shell = require('shelljs');
 var semver = require('semver');
 var request = require('superagent');
+var fs = require('fs');
 var Q = require('q');
 
 module.exports = function(grunt){
@@ -20,17 +21,22 @@ module.exports = function(grunt){
 
     //defaults
     var options = this.options({
+      cd: false,
       bump: true,
       file: grunt.config('pkgFile') || 'package.json',
-      shrinkwrapFile : grunt.config('shrinkwrapFile') || 'npm-shrinkwrap.json',
       add: true,
       commit: true,
       tag: true,
       push: true,
       pushTags: true,
-      npm : true,
-      shrinkwrap : true
+      npm : true
     });
+
+
+    var gothere = ifEnabled('cd', cd)
+    if(gothere) {
+      gothere()
+    }
 
     var config = setup(options.file, type);
     var templateOptions = {
@@ -51,7 +57,6 @@ module.exports = function(grunt){
 
     Q()
       .then(ifEnabled('bump', bump))
-      .then(ifEnabled('shrinkwrap', shrinkwrap))
       .then(ifEnabled('add', add))
       .then(ifEnabled('commit', commit))
       .then(ifEnabled('tag', tag))
@@ -106,6 +111,13 @@ module.exports = function(grunt){
       return deferred.promise;
     }
 
+    function cd(){
+      var newDir = options['cd']
+      console.log('changing dir to ', newDir)
+      return process.chdir(newDir)
+    }
+
+
     function add(addFile){
       if(addFile === undefined) {
         addFile = config.file
@@ -114,12 +126,7 @@ module.exports = function(grunt){
     }
 
     function commit(){
-      var filesString = config.file;
-      if(options.shrinkwrap) {
-        filesString += ' ' + options.shrinkwrapFile;
-      }
-
-      return run('git commit '+ filesString +' -m "'+ commitMessage +'"', 'committed ' + filesString);
+      return run('git commit '+ config.file +' -m "'+ commitMessage +'"', 'committed ' + config.file);
     }
 
     function tag(){
@@ -183,11 +190,6 @@ module.exports = function(grunt){
       }
 
       return deferred.promise;
-    }
-
-    function shrinkwrap() {
-      run('npm shrinkwrap', 'npm shrink wrapping');
-      add(options.shrinkwrapFile);
     }
 
   });
